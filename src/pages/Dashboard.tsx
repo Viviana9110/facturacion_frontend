@@ -27,7 +27,7 @@ const Dashboard = () => {
 
   const loadUserData = () => {
 
-    const today = new Date().toISOString().split('T')[0]
+    /*const today = new Date().toISOString().split('T')[0]*/
 
   }
 
@@ -38,7 +38,7 @@ const Dashboard = () => {
   
 
   // HISTORIAL PERSISTENTE
-  const [history, setHistory] = useState<Invoice[]>(() => {
+  const [history] = useState<Invoice[]>(() => {
   const saved = localStorage.getItem("invoices")
   return saved ? (JSON.parse(saved) as Invoice[]) : []
 })

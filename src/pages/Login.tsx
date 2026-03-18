@@ -17,7 +17,7 @@ const Login = () => {
   const navigate = useNavigate()
   const { login, signup, user } = useAppContext()
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault()
     setIsSubmitting(true)
 

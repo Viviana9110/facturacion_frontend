@@ -7,6 +7,17 @@ import { ReceiptIcon, Users2Icon, PackageIcon, PlusCircleIcon } from "lucide-rea
 import TopProducts from "../components/TopProducts"
 import TopClients from "../components/TopClients"
 
+type Invoice = {
+  number: string
+  customer: string
+  total: number
+  qr: string
+  pdf: string
+  items?: {
+    name: string
+    quantity: number
+  }[]
+}
 
 const Dashboard = () => {
 
@@ -27,10 +38,10 @@ const Dashboard = () => {
   
 
   // HISTORIAL PERSISTENTE
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem("invoices")
-    return saved ? JSON.parse(saved) : []
-  })
+  const [history, setHistory] = useState<Invoice[]>(() => {
+  const saved = localStorage.getItem("invoices")
+  return saved ? (JSON.parse(saved) as Invoice[]) : []
+})
 
   
   useEffect(() => {
@@ -43,7 +54,7 @@ const Dashboard = () => {
 
       {/* HEADER */}
 
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
+      <div className="bg-linear-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
 
         <p className="text-sm opacity-90">
           Bienvenida de nuevo
@@ -88,9 +99,9 @@ const Dashboard = () => {
             Clientes activos
           </p>
 
-          <p className="text-3xl font-bold text-slate-800">
-            
-          </p>
+         <p className="text-3xl font-bold text-slate-800">
+  {clients.filter((c: any) => c.status === "Activo").length}
+</p>
 
         </Card>
 
@@ -266,7 +277,7 @@ const Dashboard = () => {
 
               <tbody>
 
-                {history.map((invoice, index) => (
+                {history.map((invoice: Invoice, index: number) => (
 
                   <tr
                     key={index}

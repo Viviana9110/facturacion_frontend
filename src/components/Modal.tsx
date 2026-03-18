@@ -1,10 +1,17 @@
 import { useEffect } from 'react'
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+type ModalProps = {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+}
+
+const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
 
     // Cerrar con tecla ESC
   useEffect(() => {
-    const handleEsc = (e) => {
+    const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }

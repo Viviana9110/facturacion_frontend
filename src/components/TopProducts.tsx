@@ -1,14 +1,27 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
-const TopProducts = ({ invoices }) => {
+type Item = {
+  name: string
+  quantity: number
+}
+
+type Invoice = {
+  items?: Item[]
+}
+
+type TopProductsProps = {
+  invoices: Invoice[]
+}
+
+const TopProducts = ({ invoices }: TopProductsProps) => {
 
   const getTopProducts = () => {
 
-    const productMap = {}
+    const productMap: Record<string, number> = {}
 
-    invoices.forEach(inv => {
+    invoices.forEach((inv) => {
 
-      inv.items?.forEach(item => {
+      inv.items?.forEach((item) => {
 
         if (!productMap[item.name]) {
           productMap[item.name] = 0
@@ -21,7 +34,7 @@ const TopProducts = ({ invoices }) => {
     })
 
     return Object.entries(productMap)
-      .map(([name, qty]) => ({ name, qty }))
+      .map(([name, qty]) => ({ name, qty: Number(qty) }))
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 5)
 

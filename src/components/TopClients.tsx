@@ -1,12 +1,21 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
-const TopClients = ({ invoices }) => {
+type Invoice = {
+  customer: string
+  total: number | string
+}
+
+type TopClientsProps = {
+  invoices: Invoice[]
+}
+
+const TopClients = ({ invoices }: TopClientsProps) => {
 
   const getTopClients = () => {
 
-    const clients = {}
+    const clients: Record<string, number> = {}
 
-    invoices.forEach(inv => {
+    invoices.forEach((inv) => {
 
       if (!clients[inv.customer]) {
         clients[inv.customer] = 0
@@ -17,7 +26,7 @@ const TopClients = ({ invoices }) => {
     })
 
     return Object.entries(clients)
-      .map(([name, total]) => ({ name, total }))
+      .map(([name, total]) => ({ name, total: Number(total) }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5)
 

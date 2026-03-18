@@ -14,6 +14,7 @@ const emptyClient = {
   status: "Activo"
 };
 
+
 export default function Clients() {
 
   const { clients, createClient, updateClient, deleteClient } = useAppContext()

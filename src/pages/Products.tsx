@@ -5,33 +5,50 @@ import Modal from "../components/Modal";
 import Input from "../components/ui/Input";
 import { useAppContext } from "../context/AppContext";
 
-const emptyProduct = {
+/* ================== TYPES ================== */
+
+type Product = {
+  id?: number;
+  name: string;
+  price: string | number;
+  category: string;
+  status: "Disponible" | "Agotado";
+};
+
+/* ================== DEFAULT ================== */
+
+const emptyProduct: Product = {
   name: "",
   price: "",
   category: "",
-  status: "Disponible"
+  status: "Disponible",
 };
 
-export default function Products() {
+/* ================== COMPONENT ================== */
 
+export default function Products() {
   const {
     productsCatalog,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
   } = useAppContext();
 
-  const [search, setSearch] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState({ ...emptyProduct });
-  const [isEditing, setIsEditing] = useState(false);
+  const [search, setSearch] = useState<string>("");
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product>(emptyProduct);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  // 🔎 búsqueda optimizada
+  /* ================== FILTER ================== */
+
   const filteredProducts = useMemo(() => {
-    return productsCatalog.filter(product =>
+    return productsCatalog.filter((product: Product) =>
       product.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [productsCatalog, search]);
+
+  /* ================== ACTIONS ================== */
 
   const openCreateModal = () => {
     setSelectedProduct({ ...emptyProduct });
@@ -39,14 +56,13 @@ export default function Products() {
     setIsOpen(true);
   };
 
-  const openEditModal = (product) => {
+  const openEditModal = (product: Product) => {
     setSelectedProduct({ ...product });
     setIsEditing(true);
     setIsOpen(true);
   };
 
   const saveProduct = () => {
-
     if (!selectedProduct.name || !selectedProduct.price) {
       alert("Nombre y precio son obligatorios");
       return;
@@ -61,21 +77,17 @@ export default function Products() {
     setIsOpen(false);
   };
 
-  const handleDelete = (id) => {
-
+  const handleDelete = (id: number) => {
     if (!confirm("¿Eliminar producto?")) return;
-
     deleteProduct(id);
   };
 
+  /* ================== UI ================== */
+
   return (
     <div>
-
       <div className="flex justify-between items-center mb-6">
-
-        <h1 className="text-2xl font-bold text-white">
-          Productos
-        </h1>
+        <h1 className="text-2xl font-bold text-white">Productos</h1>
 
         <button
           onClick={openCreateModal}
@@ -83,25 +95,19 @@ export default function Products() {
         >
           + Nuevo Producto
         </button>
-
       </div>
 
       <Card>
-
         <div className="mb-4">
-
           <Input
             placeholder="Buscar producto..."
             value={search}
-            onChange={(value) => setSearch(value)}
+            onChange={(value) => setSearch(String(value))}
           />
-
         </div>
 
         <div className="overflow-x-auto">
-
           <table className="min-w-full text-sm">
-
             <thead>
               <tr className="bg-gray-100 text-xs uppercase text-gray-600">
                 <th className="px-6 py-3">Producto</th>
@@ -113,11 +119,8 @@ export default function Products() {
             </thead>
 
             <tbody className="divide-y">
-
-              {filteredProducts.map(product => (
-
+              {filteredProducts.map((product: Product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
-
                   <td className="px-6 py-4 font-medium text-gray-800">
                     {product.name}
                   </td>
@@ -131,7 +134,6 @@ export default function Products() {
                   </td>
 
                   <td className="px-6 py-4">
-
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         product.status === "Disponible"
@@ -141,54 +143,46 @@ export default function Products() {
                     >
                       {product.status}
                     </span>
-
                   </td>
 
                   <td className="px-6 py-4 text-center space-x-2">
-
                     <button
                       onClick={() => openEditModal(product)}
                       className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
                     >
-                      <EditIcon size={16}/>
+                      <EditIcon size={16} />
                     </button>
 
                     <button
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDelete(product.id!)}
                       className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
                     >
-                      <TrashIcon size={16}/>
+                      <TrashIcon size={16} />
                     </button>
-
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         </div>
-
       </Card>
 
-      {/* Modal */}
+      {/* MODAL */}
 
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         title={isEditing ? "Editar Producto" : "Nuevo Producto"}
       >
-
         <div className="space-y-4">
-
           <Input
             label="Nombre"
             value={selectedProduct.name}
             onChange={(value) =>
-              setSelectedProduct({ ...selectedProduct, name: value })
+              setSelectedProduct({
+                ...selectedProduct,
+                name: String(value),
+              })
             }
             required
           />
@@ -198,7 +192,10 @@ export default function Products() {
             type="number"
             value={selectedProduct.price}
             onChange={(value) =>
-              setSelectedProduct({ ...selectedProduct, price: value })
+              setSelectedProduct({
+                ...selectedProduct,
+                price: value,
+              })
             }
             required
           />
@@ -207,12 +204,14 @@ export default function Products() {
             label="Categoría"
             value={selectedProduct.category}
             onChange={(value) =>
-              setSelectedProduct({ ...selectedProduct, category: value })
+              setSelectedProduct({
+                ...selectedProduct,
+                category: String(value),
+              })
             }
           />
 
           <div>
-
             <label className="text-sm font-medium text-black">
               Estado
             </label>
@@ -220,18 +219,19 @@ export default function Products() {
             <select
               className="w-full border rounded-xl p-3 text-black"
               value={selectedProduct.status}
-              onChange={(e) =>
-                setSelectedProduct({ ...selectedProduct, status: e.target.value })
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedProduct({
+                  ...selectedProduct,
+                  status: e.target.value as "Disponible" | "Agotado",
+                })
               }
             >
-              <option>Disponible</option>
-              <option>Agotado</option>
+              <option value="Disponible">Disponible</option>
+              <option value="Agotado">Agotado</option>
             </select>
-
           </div>
 
           <div className="flex gap-3 pt-2">
-
             <button
               onClick={saveProduct}
               className="bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-800"
@@ -245,13 +245,9 @@ export default function Products() {
             >
               Cancelar
             </button>
-
           </div>
-
         </div>
-
       </Modal>
-
     </div>
   );
 }

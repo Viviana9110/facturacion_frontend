@@ -68,7 +68,7 @@ const Login = () => {
 
           {/* TÍTULO */}
           <h2 className="text-2xl font-bold text-center text-gray-800">
-            {state === "login" ? "Bienvenida de nuevo" : "Crear cuenta"}
+            {state === "login" ? "Bienvenid@ de nuevo" : "Crear cuenta"}
           </h2>
 
           {/* USERNAME */}

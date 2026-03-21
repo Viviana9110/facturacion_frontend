@@ -97,7 +97,11 @@ const Bill = () => {
         customer: customer.name,
         total,
         qr: data.qr,
-        pdf: data.pdf
+        pdf: data.pdf,
+        items: validProducts.map(p => ({
+    name: p.description,
+    quantity: p.quantity
+  }))
       }])
 
       setInvoice({ date: "", payment_method: "" })

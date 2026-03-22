@@ -22,43 +22,53 @@ type Invoice = {
 const Dashboard = () => {
 
   const navigate = useNavigate()
-
   const { user, clients, productsCatalog } = useAppContext()
 
-  const loadUserData = () => {
+  const [previewPDF, setPreviewPDF] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  
+  const loadUserData = () => {}
 
-    /*const today = new Date().toISOString().split('T')[0]*/
-
-  }
-
-  useEffect(() => {
+   useEffect(() => {
     loadUserData()
   }, [])
 
-  
-
   // HISTORIAL PERSISTENTE
   const [history] = useState<Invoice[]>(() => {
-  const saved = localStorage.getItem("invoices")
-  return saved ? (JSON.parse(saved) as Invoice[]) : []
-})
+    const saved = localStorage.getItem("invoices")
+    return saved ? (JSON.parse(saved) as Invoice[]) : []
+  })
 
-  
+ 
+
   useEffect(() => {
     localStorage.setItem("invoices", JSON.stringify(history))
   }, [history])
 
-  return (
+  // 🔥 ABRIR MODAL PDF
+  const openPDFModal = (number: string) => {
+    const url = `${import.meta.env.VITE_API_URL}/factura-pdf/${number}`;
+    setPreviewPDF(url);
+    setShowModal(true);
+  };
 
+  // 🔥 DESCARGAR PDF
+  const downloadPDF = (number: string) => {
+    const url = `${import.meta.env.VITE_API_URL}/factura-pdf/${number}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Factura-${number}.pdf`;
+    a.click();
+  };
+
+
+  return (
     <div className="p-6 space-y-8">
 
       {/* HEADER */}
-
       <div className="bg-linear-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
 
-        <p className="text-sm opacity-90">
-          Bienvenida de nuevo
-        </p>
+        <p className="text-sm opacity-90">Bienvenida de nuevo</p>
 
         <h1 className="text-3xl font-bold mt-1">
           Hola {user?.username} 👋
@@ -71,200 +81,127 @@ const Dashboard = () => {
         <p className="text-sm mt-4 opacity-80">
           Hoy tienes <span className="font-semibold">{history.length}</span> facturas registradas
         </p>
-
       </div>
 
 
       {/* TARJETAS ESTADÍSTICAS */}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        {/* Clientes activos */}
-
         <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-
           <div className="flex items-center justify-between mb-4">
-
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <Users2Icon className="w-5 h-5 text-blue-600"/>
             </div>
-
-            <span className="text-xs text-slate-400">
-              Hoy
-            </span>
-
+            <span className="text-xs text-slate-400">Hoy</span>
           </div>
 
-          <p className="text-sm text-slate-500">
-            Clientes activos
+          <p className="text-sm text-slate-500">Clientes activos</p>
+          <p className="text-3xl font-bold text-slate-800">
+            {clients.filter((c: any) => c.status === "Activo").length}
           </p>
-
-         <p className="text-3xl font-bold text-slate-800">
-  {clients.filter((c: any) => c.status === "Activo").length}
-</p>
-
         </Card>
 
 
-        {/* Facturas */}
-
         <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-
           <div className="flex items-center justify-between mb-4">
-
             <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
               <ReceiptIcon className="w-5 h-5 text-purple-600"/>
             </div>
-
-            <span className="text-xs text-slate-400">
-              Total
-            </span>
-
+            <span className="text-xs text-slate-400">Total</span>
           </div>
 
-          <p className="text-sm text-slate-500">
-            Facturas generadas
-          </p>
-
-          <p className="text-3xl font-bold text-slate-800">
-            {history.length}
-          </p>
-
+          <p className="text-sm text-slate-500">Facturas generadas</p>
+          <p className="text-3xl font-bold text-slate-800">{history.length}</p>
         </Card>
 
 
-        {/* Clientes totales */}
-
         <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-
           <div className="flex items-center justify-between mb-4">
-
             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
               <Users2Icon className="w-5 h-5 text-emerald-600"/>
             </div>
-
           </div>
 
-          <p className="text-sm text-slate-500">
-            Total clientes
-          </p>
-
-          <p className="text-3xl font-bold text-slate-800">
-            {clients?.length || 0}
-          </p>
-
+          <p className="text-sm text-slate-500">Total clientes</p>
+          <p className="text-3xl font-bold text-slate-800">{clients?.length || 0}</p>
         </Card>
 
 
-        {/* Productos */}
-
         <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-
           <div className="flex items-center justify-between mb-4">
-
             <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
               <PackageIcon className="w-5 h-5 text-orange-600"/>
             </div>
-
           </div>
 
-          <p className="text-sm text-slate-500">
-            Productos registrados
-          </p>
-
-          <p className="text-3xl font-bold text-slate-800">
-            {productsCatalog?.length || 0}
-          </p>
-
+          <p className="text-sm text-slate-500">Productos registrados</p>
+          <p className="text-3xl font-bold text-slate-800">{productsCatalog?.length || 0}</p>
         </Card>
 
       </div>
 
 
       {/* ACCIONES RÁPIDAS */}
-
       <Card className="shadow-md">
 
-        <h3 className="font-semibold text-black text-lg mb-4">
-          Acciones rápidas
-        </h3>
+        <h3 className="font-semibold text-black text-lg mb-4">Acciones rápidas</h3>
 
         <div className="flex flex-wrap gap-4">
 
           <button
-  onClick={() => navigate("/facturacion")}
-  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
->
-  <PlusCircleIcon size={18}/>
-  Crear factura
-</button>
+            onClick={() => navigate("/facturacion")}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            <PlusCircleIcon size={18}/>
+            Crear factura
+          </button>
 
-<button
-  onClick={() => navigate("/clientes")}
-  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
->
-  <PlusCircleIcon size={18}/>
-  Nuevo cliente
-</button>
+          <button
+            onClick={() => navigate("/clientes")}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            <PlusCircleIcon size={18}/>
+            Nuevo cliente
+          </button>
 
-<button
-  onClick={() => navigate("/productos")}
-  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
->
-  <PlusCircleIcon size={18}/>
-  Nuevo producto
-</button>
+          <button
+            onClick={() => navigate("/productos")}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            <PlusCircleIcon size={18}/>
+            Nuevo producto
+          </button>
 
         </div>
 
       </Card>
 
-  
 
-{/*Productos mas vendidos */}
+      {/* TOPS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <h3 className="font-semibold text-black mb-4">Top productos vendidos</h3>
+          <TopProducts invoices={history}/>
+        </Card>
 
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-  <Card>
-
-    <h3 className="font-semibold text-black mb-4">
-      Top productos vendidos
-    </h3>
-
-    <TopProducts invoices={history}/>
-
-  </Card>
-
-{/*Top Clientes */}
-  <Card>
-
-    <h3 className="font-semibold text-black mb-4">
-      Top clientes
-    </h3>
-
-    <TopClients invoices={history}/>
-
-  </Card>
-
-</div>
+        <Card>
+          <h3 className="font-semibold text-black mb-4">Top clientes</h3>
+          <TopClients invoices={history}/>
+        </Card>
+      </div>
 
 
-      {/* HISTORIAL FACTURAS */}
-
+      {/* HISTORIAL */}
       {history.length > 0 && (
-
         <Card className="shadow-md">
 
-          <h2 className="text-xl font-bold text-black mb-6">
-            Historial de Facturas
-          </h2>
+          <h2 className="text-xl font-bold text-black mb-6">Historial de Facturas</h2>
 
           <div className="overflow-x-auto">
 
             <table className="w-full text-sm rounded-lg overflow-hidden">
 
               <thead className="bg-slate-700 text-white">
-
                 <tr>
                   <th className="p-3 text-left">Factura</th>
                   <th className="p-3 text-left">Cliente</th>
@@ -272,58 +209,51 @@ const Dashboard = () => {
                   <th className="p-3 text-center">QR</th>
                   <th className="p-3 text-center">PDF</th>
                 </tr>
-
               </thead>
 
               <tbody>
-
                 {history.map((invoice: Invoice, index: number) => (
+                  <tr key={index} className="border-b hover:bg-slate-50 transition">
 
-                  <tr
-                    key={index}
-                    className="border-b hover:bg-slate-50 transition"
-                  >
-
-                    <td className="p-3 text-black font-medium">
-                      {invoice.number}
-                    </td>
-
-                    <td className="p-3 text-black">
-                      {invoice.customer}
-                    </td>
+                    <td className="p-3 text-black font-medium">#{invoice.number}</td>
+                    <td className="p-3 text-black">{invoice.customer}</td>
 
                     <td className="p-3 text-center text-black">
                       ${Number(invoice.total).toLocaleString()}
                     </td>
 
                     <td className="p-3 text-center">
-
                       <a
                         href={invoice.qr}
                         target="_blank"
-                        className="text-indigo-600 hover:underline"
+                        className="text-indigo-600"
                       >
                         Ver QR
                       </a>
-
                     </td>
 
                     <td className="p-3 text-center">
 
-                      <a
-                        href={invoice.pdf}
-                        target="_blank"
-                        className="text-green-600 hover:underline"
+                      {/* Ver PDF */}
+                      <button
+                      onClick={() => openPDFModal(invoice.number)}
+                        className="text-indigo-600 hover:underline"
                       >
-                        Descargar
-                      </a>
+                        Ver PDF
+                      </button>
+
+                      {/* Descargar */}
+                     <button
+                      onClick={() => downloadPDF(invoice.number)}
+                        className="text-green-600 hover:underline"
+>
+  Descargar
+</button>
 
                     </td>
 
                   </tr>
-
                 ))}
-
               </tbody>
 
             </table>
@@ -331,13 +261,36 @@ const Dashboard = () => {
           </div>
 
         </Card>
+      )}
 
+     {/* MODAL PDF */}
+      {showModal && previewPDF && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-4 w-11/12 md:w-5/6 lg:w-4/5 h-[90vh] shadow-xl">
+            <div className="flex justify-between mb-3">
+              <h2 className="font-bold">Vista previa</h2>
+
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setPreviewPDF(null);
+                }}
+                className="text-red-500"
+              >
+                Cerrar ✖
+              </button>
+            </div>
+
+            <iframe
+              src={previewPDF}
+              className="w-full h-full border rounded-lg"
+            />
+          </div>
+        </div>
       )}
 
     </div>
-
   )
-
 }
 
 export default Dashboard

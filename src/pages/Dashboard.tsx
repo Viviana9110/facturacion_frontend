@@ -28,7 +28,7 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const { user, clients, productsCatalog } = useAppContext()
 
-  const [previewPDF, setPreviewPDF] = useState<string | null>(null);
+  const [previewPDF] = useState<string | null>(null);
   const [invoiceData, setInvoiceData] = useState<any>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 const [showPDFModal, setShowPDFModal] = useState(false);
@@ -425,7 +425,7 @@ const exportInvoiceToPDF = () => {
 
     <div
   id="invoice-to-pdf"
-  className="bg-white w-[900px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-8"
+  className="bg-white w-225 max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-8"
 >
   
 

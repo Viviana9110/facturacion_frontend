@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAppContext } from "../context/AppContext"
 import Card from "../components/ui/Card"
-import { ReceiptIcon, Users2Icon, PackageIcon, PlusCircleIcon, EyeIcon, Eye, EyeClosedIcon } from "lucide-react"
+import { ReceiptIcon, Users2Icon, PackageIcon, PlusCircleIcon, EyeIcon} from "lucide-react"
 
 import TopProducts from "../components/TopProducts"
 import TopClients from "../components/TopClients"
@@ -22,25 +22,6 @@ type Invoice = {
   }[]
 }
 
-type FactusInvoice = {
-  bill: {
-    number: string
-    total: number
-    cufe: string
-    created_at: string
-    qr_image?: string
-    items?: {
-      name: string
-      quantity: number
-      price: number
-    }[]
-  }
-  customer?: {
-    names: string
-    identification: string
-    email?: string
-  }
-}
 
 const Dashboard = () => {
 
@@ -85,13 +66,7 @@ const [showPDFModal, setShowPDFModal] = useState(false);
   }
 };
 
-  // 🔥 ABRIR MODAL PDF
- const openPDFModal = (number: string) => {
-  const url = `${import.meta.env.VITE_API_URL}/factura-pdf/${number}`;
-  setPreviewPDF(url);
-  setShowPDFModal(true);
-};
-
+  
   // 🔥 DESCARGAR PDF
   const downloadPDF = (number: string) => {
     const url = `${import.meta.env.VITE_API_URL}/factura-pdf/${number}`;

@@ -15,9 +15,11 @@ const Sidebar = () => {
   ]
 
   const handleLogout = () => {
+   if (confirm("¿Seguro que deseas cerrar sesión?")) {
     logout()
     navigate('/login')
   }
+}
 
   return (
 

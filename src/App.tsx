@@ -4,38 +4,33 @@ import Dashboard from "./pages/Dashboard"
 import FoodLog from "./pages/Clients"
 import ActivityLog from "./pages/Products"
 import Bill from "./pages/Bill"
-import { useAppContext } from "./context/AppContext"
 import Login from "./pages/Login"
-import { Toaster } from "react-hot-toast"
 
+import { Toaster } from "react-hot-toast"
+import ProtectedRoute from "./components/ProtectedRoute"
 
 const App = () => {
-
-  const {user, isUserFetched} = useAppContext()
-
-  if(!user){
-    return isUserFetched ? <Login/> : <p>Loading...</p>
-  }
-
   return (
     <>
-    <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#1f2937",
-            color: "#fff",
-            borderRadius: "10px"
-          }
-        }}
-      />
+      <Toaster />
+
       <Routes>
-        <Route path="/" element={<Layout/>}>
-          <Route index element={<Dashboard/>}/>
-          <Route path="clientes" element={<FoodLog/>}/>
-          <Route path="productos" element={<ActivityLog/>}/>
-          <Route path="facturacion" element={<Bill/>}/>
-          
+        {/* Ruta pública */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Rutas privadas */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout/>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="clientes" element={<FoodLog />} />
+          <Route path="productos" element={<ActivityLog />} />
+          <Route path="facturacion" element={<Bill />} />
         </Route>
       </Routes>
     </>

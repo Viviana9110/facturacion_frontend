@@ -2,7 +2,7 @@ import { AtSignIcon, EyeIcon, EyeOffIcon, LockIcon, MailIcon } from "lucide-reac
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAppContext } from "../context/AppContext"
-import { Toaster } from "react-hot-toast"
+
 import { motion } from "framer-motion"
 
 const Login = () => {
@@ -24,8 +24,10 @@ const Login = () => {
     try {
       if (state === "login") {
         await login({ email, password })
+        navigate("/")
       } else {
         await signup({ username, email, password })
+        navigate("/")
       }
     } catch (error) {
       console.error("Error auth:", error)
@@ -42,8 +44,7 @@ const Login = () => {
 
   return (
     <>
-      <Toaster />
-
+      
       <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 relative overflow-hidden">
 
         {/* EFECTOS DE FONDO */}

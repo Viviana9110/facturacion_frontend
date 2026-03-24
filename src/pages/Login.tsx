@@ -2,7 +2,7 @@ import { AtSignIcon, EyeIcon, EyeOffIcon, LockIcon, MailIcon } from "lucide-reac
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAppContext } from "../context/AppContext"
-
+import toast from "react-hot-toast"
 import { motion } from "framer-motion"
 
 const Login = () => {
@@ -18,23 +18,23 @@ const Login = () => {
   const { login, signup, user } = useAppContext()
 
   const handleSubmit = async (e: any) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  e.preventDefault()
+  setIsSubmitting(true)
 
-    try {
-      if (state === "login") {
-        await login({ email, password })
-        navigate("/")
-      } else {
-        await signup({ username, email, password })
-        navigate("/")
-      }
-    } catch (error) {
-      console.error("Error auth:", error)
+  try {
+    if (state === "login") {
+      await login({ email, password })
+      navigate("/")
+    } else {
+      await signup({ username, email, password })
+      navigate("/")
     }
-
-    setIsSubmitting(false)
+  } catch (error) {
+    toast.error("Email o password incorrectos")
   }
+
+  setIsSubmitting(false)
+}
 
   useEffect(() => {
     if (user) {

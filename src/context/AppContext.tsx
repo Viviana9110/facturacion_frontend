@@ -96,17 +96,20 @@ const deleteProduct = (id:number) => {
     ========================= */
 
     const signup = async (credentials: Credentials) => {
-        const {data} = await mockApi.auth.register(credentials)
+    const { data } = await mockApi.auth.register(credentials)
 
-        setUser(data.user)
+    setUser({
+        ...data.user,
+        token: data.jwt  // ✅ aquí está la clave
+    })
 
-        if(data?.user?.age && data?.user?.weight && data?.user?.goal){
-            setOnboardingCompleted(true)
-            navigate('/')
-        }
-
-        localStorage.setItem('token', data.jwt)
+    if(data?.user?.age && data?.user?.weight && data?.user?.goal){
+        setOnboardingCompleted(true)
+        navigate('/')
     }
+
+    localStorage.setItem('token', data.jwt)
+}
 
     const login = async (credentials: Credentials) => {
 

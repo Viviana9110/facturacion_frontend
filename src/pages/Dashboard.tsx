@@ -23,6 +23,7 @@ type Invoice = {
 }
 
 
+
 const Dashboard = () => {
 
   const navigate = useNavigate()
@@ -32,7 +33,11 @@ const Dashboard = () => {
   const [invoiceData, setInvoiceData] = useState<any>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 const [showPDFModal, setShowPDFModal] = useState(false);
-  
+
+const getItems = () => {
+  return invoiceData?.items || [];
+};
+
   const loadUserData = () => {}
 
    useEffect(() => {
@@ -60,10 +65,14 @@ const [showPDFModal, setShowPDFModal] = useState(false);
     setInvoiceData(data.data);
     setShowInvoiceModal(true);
 
+    console.log("INVOICE DATA:", invoiceData);
+
   } catch (error) {
     console.error(error);
     toast.error("Error cargando factura");
   }
+
+  
 };
 
   
@@ -153,7 +162,7 @@ const exportInvoiceToPDF = () => {
     pdf.setFont("helvetica", "normal");
 
     // 🔷 PRODUCTOS
-    invoiceData.bill.items?.forEach((item: any) => {
+    invoiceData.items?.forEach((item: any) => {
       const price = Number(item.price || 0);
       const quantity = Number(item.quantity || 0);
       const taxRate = Number(item.tax_rate || 0);
@@ -487,7 +496,7 @@ const exportInvoiceToPDF = () => {
           </thead>
 
           <tbody className="text-black">
-            {invoiceData.bill.items?.map((item: any, index: number) => {
+            {getItems().map((item: any, index: number) => {
               
               const price = Number(item.price || 0)
   const quantity = Number(item.quantity || 0)

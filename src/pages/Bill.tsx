@@ -85,7 +85,12 @@ console.log("RESPUESTA BACKEND:", data);
           total,
           qr: data.qr,
           pdf: data.pdf,
-          items: validProducts.map(p => ({ name: p.description, quantity: p.quantity }))
+          items: validProducts.map(p => ({
+      name: p.description,
+      quantity: p.quantity,
+      price: p.price,
+      tax_rate: 19
+    }))
         }
       ]);
 

@@ -102,6 +102,7 @@ const deleteProduct = (id:number) => {
 
         if(data?.user?.age && data?.user?.weight && data?.user?.goal){
             setOnboardingCompleted(true)
+            navigate('/')
         }
 
         localStorage.setItem('token', data.jwt)
@@ -131,6 +132,7 @@ const deleteProduct = (id:number) => {
         }
 
         setIsUserFetched(true)
+        
     }
 
     const logout = () => {

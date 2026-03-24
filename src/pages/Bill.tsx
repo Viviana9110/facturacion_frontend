@@ -69,7 +69,7 @@ const Bill = () => {
 
       const data = await response.json();
 
-console.log("RESPUESTA BACKEND:", data); // 👈 AQUÍ VA
+console.log("RESPUESTA BACKEND:", data);
       toast.dismiss(toastId);
 
       if (!response.ok) return toast.error("Error al generar factura");
@@ -111,7 +111,7 @@ console.log("RESPUESTA BACKEND:", data); // 👈 AQUÍ VA
 
       // Limpiar formulario
       setInvoice({ date: "", payment_method: "" });
-      setCustomer({});
+      setCustomer({customer: ""});
       setProducts([{ description: "", quantity: 1, price: 0 }]);
 
     } catch (err) {

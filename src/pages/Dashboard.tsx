@@ -2,10 +2,13 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAppContext } from "../context/AppContext"
 import Card from "../components/ui/Card"
-import { ReceiptIcon, Users2Icon, PackageIcon, PlusCircleIcon } from "lucide-react"
+import { ReceiptIcon, Users2Icon, PackageIcon, PlusCircleIcon, EyeIcon, Eye, EyeClosedIcon } from "lucide-react"
 
 import TopProducts from "../components/TopProducts"
 import TopClients from "../components/TopClients"
+import toast from "react-hot-toast"
+
+import jsPDF from "jspdf";
 
 type Invoice = {
   number: string
@@ -19,13 +22,35 @@ type Invoice = {
   }[]
 }
 
+type FactusInvoice = {
+  bill: {
+    number: string
+    total: number
+    cufe: string
+    created_at: string
+    qr_image?: string
+    items?: {
+      name: string
+      quantity: number
+      price: number
+    }[]
+  }
+  customer?: {
+    names: string
+    identification: string
+    email?: string
+  }
+}
+
 const Dashboard = () => {
 
   const navigate = useNavigate()
   const { user, clients, productsCatalog } = useAppContext()
 
   const [previewPDF, setPreviewPDF] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+const [showPDFModal, setShowPDFModal] = useState(false);
   
   const loadUserData = () => {}
 
@@ -37,20 +62,35 @@ const Dashboard = () => {
   const [history] = useState<Invoice[]>(() => {
     const saved = localStorage.getItem("invoices")
     return saved ? (JSON.parse(saved) as Invoice[]) : []
-  })
-
- 
+  }) 
 
   useEffect(() => {
     localStorage.setItem("invoices", JSON.stringify(history))
   }, [history])
 
+  const handleViewInvoice = async (number: string) => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/invoice/${number}`);
+
+    if (!res.ok) throw new Error("Error en API");
+
+    const data = await res.json();
+
+    setInvoiceData(data.data);
+    setShowInvoiceModal(true);
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Error cargando factura");
+  }
+};
+
   // 🔥 ABRIR MODAL PDF
-  const openPDFModal = (number: string) => {
-    const url = `${import.meta.env.VITE_API_URL}/factura-pdf/${number}`;
-    setPreviewPDF(url);
-    setShowModal(true);
-  };
+ const openPDFModal = (number: string) => {
+  const url = `${import.meta.env.VITE_API_URL}/factura-pdf/${number}`;
+  setPreviewPDF(url);
+  setShowPDFModal(true);
+};
 
   // 🔥 DESCARGAR PDF
   const downloadPDF = (number: string) => {
@@ -61,6 +101,156 @@ const Dashboard = () => {
     a.click();
   };
 
+  //Exportar a PDF
+const exportInvoiceToPDF = () => {
+  try {
+    if (!invoiceData?.bill) {
+      toast.error("No hay datos de factura");
+      return;
+    }
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    let y = 10;
+
+    // 🔷 ENCABEZADO EMPRESA
+    pdf.setFontSize(16);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("FACTUS S.A.S", 10, y);
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    y += 5;
+    pdf.text("NIT: 900123456", 10, y);
+    y += 5;
+    pdf.text("Responsable de IVA", 10, y);
+    y += 4;
+    pdf.text("Direccion: Tu direccion, Manizales", 10, y);
+    y += 4;
+    pdf.text("Tel: 3001234567", 10, y);
+
+    // 🔷 TÍTULO FACTURA
+    
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("FACTURA ELECTRÓNICA", 140, 10);
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`No: ${invoiceData.bill.number}`, 140, 16);
+    pdf.text(`Fecha: ${invoiceData.bill.created_at}`, 140, 22);
+
+    y += 10;
+
+    // 🔷 CLIENTE
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.text("DATOS DEL CLIENTE", 10, y);
+
+    pdf.setFont("helvetica", "normal");
+    y += 5;
+    pdf.text(`Nombre: ${invoiceData.customer?.names}`, 10, y);
+    y += 5;
+    pdf.text(
+      `Identificación: ${invoiceData.customer?.identification}`,
+      10,
+      y
+    );
+    y += 5;
+    pdf.text(`Email: ${invoiceData.customer?.email || "-"}`, 10, y);
+
+    y += 10;
+
+    // 🔷 TABLA HEADER
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.setFillColor(230, 230, 230);
+    pdf.rect(10, y, 190, 8, "F");
+
+    pdf.text("Producto", 12, y + 5);
+    pdf.text("Cant", 100, y + 5);
+    pdf.text("Precio", 120, y + 5);
+    pdf.text("IVA", 150, y + 5);
+    pdf.text("Total", 175, y + 5);
+
+    y += 10;
+
+    pdf.setFont("helvetica", "normal");
+
+    // 🔷 PRODUCTOS
+    invoiceData.bill.items?.forEach((item: any) => {
+      const price = Number(item.price || 0);
+      const quantity = Number(item.quantity || 0);
+      const taxRate = Number(item.tax_rate || 0);
+
+      const subtotal = price * quantity;
+      const iva = subtotal * (taxRate / 100);
+      const total = subtotal + iva;
+
+      pdf.text(item.name, 12, y);
+      pdf.text(String(quantity), 100, y);
+      pdf.text(`$${price.toLocaleString("es-CO")}`, 120, y);
+      pdf.text(`$${iva.toLocaleString("es-CO")}`, 150, y);
+      pdf.text(`$${total.toLocaleString("es-CO")}`, 175, y);
+
+      y += 6;
+
+      if (y > 270) {
+        pdf.addPage();
+        y = 10;
+      }
+    });
+
+    y += 10;
+
+    // 🔷 TOTALES
+    
+    const subtotal = Number(invoiceData.bill.gross_value || 0);
+    const iva = Number(invoiceData.bill.tax_amount || 0);
+    const total = Number(invoiceData.bill.total || 0);
+
+    pdf.setFont("helvetica", "bold");
+
+    pdf.text("Subtotal:", 130, y);
+    pdf.text(`$${subtotal.toLocaleString("es-CO")}`, 170, y);
+
+    y += 6;
+    pdf.text("IVA:", 130, y);
+    pdf.text(`$${iva.toLocaleString("es-CO")}`, 170, y);
+
+    y += 8;
+    pdf.setFontSize(13);
+    pdf.text("TOTAL:", 130, y);
+    pdf.text(`$${total.toLocaleString("es-CO")}`, 170, y);
+
+    y += 15;
+
+    // 🔷 CUFE
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("CUFE:", 10, y);
+    y += 4;
+
+    const cufe = invoiceData.bill.cufe || "";
+    const splitCUFE = pdf.splitTextToSize(cufe, 180);
+    pdf.text(splitCUFE, 10, y);
+
+    y += 10;
+
+    // 🔷 PIE
+    pdf.setFontSize(8);
+    pdf.text(
+      "Esta factura es válida electrónicamente según la DIAN.",
+      10,
+      y
+    );
+
+    pdf.save(`Factura-${invoiceData.bill.number}.pdf`);
+  } catch (error) {
+    console.error(error);
+    toast.error("Error generando PDF");
+  }
+};
 
   return (
     <div className="p-6 space-y-8">
@@ -206,14 +396,14 @@ const Dashboard = () => {
                   <th className="p-3 text-left">Factura</th>
                   <th className="p-3 text-left">Cliente</th>
                   <th className="p-3 text-center">Total</th>
-                  <th className="p-3 text-center">QR</th>
+                  <th className="p-3 text-center">CUFE</th>
                   <th className="p-3 text-center">PDF</th>
                 </tr>
               </thead>
 
               <tbody>
                 {history.map((invoice: Invoice, index: number) => (
-                  <tr key={index} className="border-b hover:bg-slate-50 transition">
+                  <tr key={index} className="border-b hover:bg-slate-200 transition">
 
                     <td className="p-3 text-black font-medium">#{invoice.number}</td>
                     <td className="p-3 text-black">{invoice.customer}</td>
@@ -226,31 +416,23 @@ const Dashboard = () => {
                       <a
                         href={invoice.qr}
                         target="_blank"
-                        className="text-indigo-600"
+                        className="text-indigo-600 text-center cursor-pointer"
                       >
-                        Ver QR
+                        Ver
                       </a>
                     </td>
 
                     <td className="p-3 text-center">
 
-                      {/* Ver PDF */}
-                      <button
-                      onClick={() => openPDFModal(invoice.number)}
-                        className="text-indigo-600 hover:underline"
-                      >
-                        Ver PDF
-                      </button>
+  {/* 👁 VER FACTURA (MODAL) */}
+  <button
+    onClick={() => handleViewInvoice(invoice.number)}
+    className="text-blue-600 hover:underline mr-2 cursor-pointer"
+  >
+    <EyeIcon/>
+  </button>
 
-                      {/* Descargar */}
-                     <button
-                      onClick={() => downloadPDF(invoice.number)}
-                        className="text-green-600 hover:underline"
->
-  Descargar
-</button>
-
-                    </td>
+</td>
 
                   </tr>
                 ))}
@@ -263,31 +445,207 @@ const Dashboard = () => {
         </Card>
       )}
 
-     {/* MODAL PDF */}
-      {showModal && previewPDF && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl p-4 w-11/12 md:w-5/6 lg:w-4/5 h-[90vh] shadow-xl">
-            <div className="flex justify-between mb-3">
-              <h2 className="font-bold">Vista previa</h2>
+     {showInvoiceModal && invoiceData?.bill && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setPreviewPDF(null);
-                }}
-                className="text-red-500"
-              >
-                Cerrar ✖
-              </button>
-            </div>
+    <div
+  id="invoice-to-pdf"
+  className="bg-white w-[900px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-8"
+>
+  
 
-            <iframe
-              src={previewPDF}
-              className="w-full h-full border rounded-lg"
-            />
-          </div>
+      {/* HEADER */}
+      <div className="flex justify-between items-start border-b pb-6 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-indigo-600">
+            FACTURA ELECTRÓNICA
+          </h1>
+          <p className="text-sm text-gray-500">
+            N° {invoiceData.bill.number}
+          </p>
         </div>
-      )}
+
+        <div className="text-right text-sm">
+          <p><strong>Fecha:</strong> {invoiceData.bill.created_at}</p>
+          <p className="mt-1"><strong>CUFE:</strong></p>
+          <p className="text-xs break-all text-gray-500">
+            {invoiceData.bill.cufe}
+          </p>
+        </div>
+      </div>
+
+      {/* EMPRESA Y CLIENTE */}
+      <div className="grid grid-cols-2 gap-6 mb-8">
+
+        <div>
+          <h2 className="font-semibold text-gray-700 mb-2">EMISOR</h2>
+          <p className="text-sm font-medium">Tu Empresa S.A.S</p>
+          <p className="text-sm text-gray-500">NIT: 900123456</p>
+          <p className="text-sm text-gray-500">Colombia</p>
+        </div>
+
+        <div>
+          <h2 className="font-semibold text-gray-700 mb-2">CLIENTE</h2>
+          <p className="text-sm font-medium">{invoiceData.customer?.names}</p>
+          <p className="text-sm text-gray-500">
+            CC/NIT: {invoiceData.customer?.identification}
+          </p>
+          <p className="text-sm text-gray-500">
+            {invoiceData.customer?.email}
+          </p>
+        </div>
+
+      </div>
+
+      {/* TABLA PRODUCTOS */}
+      <div className="mb-8">
+        <table className="w-full text-sm border rounded-lg overflow-hidden">
+          
+          <thead className="bg-indigo-600 text-white">
+            <tr>
+              <th className="p-3 text-left">Producto</th>
+              <th className="p-3 text-center">Cant</th>
+              <th className="p-3 text-center">Precio</th>
+              <th className="p-3 text-center">IVA</th>
+              <th className="p-3 text-center">Total</th>
+            </tr>
+          </thead>
+
+          <tbody className="text-black">
+            {invoiceData.bill.items?.map((item: any, index: number) => {
+              
+              const price = Number(item.price || 0)
+  const quantity = Number(item.quantity || 0)
+  const taxRate = Number(item.tax_rate || 0)
+
+  const subtotal = price * quantity
+  const iva = subtotal * (taxRate / 100)
+  const total = subtotal + iva
+  
+              return (
+                <tr key={index} className="border-b text-black">
+                  <td className="p-3">{item.name}</td>
+
+                  <td className="p-3 text-center">
+                    {quantity}
+                  </td>
+
+                  <td className="p-3 text-center">
+                    ${price.toLocaleString("es-CO")}
+                  </td>
+
+                  <td className="p-3 text-center">
+                    ${iva.toLocaleString("es-CO")}
+                  </td>
+
+                  <td className="p-3 text-center font-medium">
+                    ${total.toLocaleString("es-CO")}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+
+        </table>
+      </div>
+
+      {/* TOTALES */}
+      <div className="flex justify-end mb-8">
+        <div className="w-80 text-sm space-y-3 text-black">
+
+          <div className="flex justify-between  text-black">
+            <span>Subtotal:</span>
+            <span>
+              ${Number(invoiceData.bill.gross_value || 0).toLocaleString("es-CO")}
+            </span>
+          </div>
+
+          <div className="flex justify-between  text-black">
+            <span>IVA:</span>
+            <span>
+              ${Number(invoiceData.bill.tax_amount || 0).toLocaleString("es-CO")}
+            </span>
+          </div>
+
+          <div className="flex justify-between text-lg font-bold border-t pt-3  text-black">
+            <span>Total:</span>
+            <span>
+              ${Number(invoiceData.bill.total || 0).toLocaleString("es-CO")}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* QR */}
+      <div className="flex justify-between items-center border-t pt-6">
+
+        <div className="text-xs text-gray-500 max-w-md">
+          Esta factura es válida electrónicamente según la DIAN.
+          Verifique su autenticidad escaneando el código QR.
+        </div>
+
+        {invoiceData.bill.qr_image && (
+          <img
+  src={invoiceData.bill.qr_image}
+  crossOrigin="anonymous"
+  alt="QR"
+  className="w-28"
+/>
+        )}
+
+      </div>
+
+      {/* BOTONES */}
+      <div className="flex justify-end gap-3 mt-8">
+
+  <button
+    onClick={exportInvoiceToPDF}
+    className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg"
+  >
+    Exportar PDF
+  </button>
+
+  <button
+    onClick={() => downloadPDF(invoiceData.bill.number)}
+    className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg"
+  >
+    Descargar PDF
+  </button>
+
+  <button
+    onClick={() => setShowInvoiceModal(false)}
+    className="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg"
+  >
+    Cerrar
+  </button>
+
+</div>
+
+
+    </div>
+  </div>
+)}
+
+{showPDFModal && previewPDF && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white w-[90%] h-[90%] rounded-xl overflow-hidden">
+
+      <iframe
+        src={previewPDF}
+        className="w-full h-full"
+      />
+
+      <button
+        onClick={() => setShowPDFModal(false)}
+        className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded"
+      >
+        X
+      </button>
+
+    </div>
+  </div>
+)}
 
     </div>
   )

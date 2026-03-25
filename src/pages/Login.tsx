@@ -45,7 +45,7 @@ const Login = () => {
   return (
     <>
       
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 relative overflow-hidden">
+      <main className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 relative overflow-hidden">
 
         {/* EFECTOS DE FONDO */}
         <div className="absolute w-72 h-72 bg-white/20 rounded-full blur-3xl top-10 left-10"></div>

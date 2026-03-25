@@ -9,6 +9,7 @@ import TopClients from "../components/TopClients"
 import toast from "react-hot-toast"
 
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Invoice = {
   number: string
@@ -19,6 +20,8 @@ type Invoice = {
   items?: {
     name: string
     quantity: number
+    price?: number
+    tax_rate?: number
   }[]
 }
 
@@ -33,10 +36,6 @@ const Dashboard = () => {
   const [invoiceData, setInvoiceData] = useState<any>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 const [showPDFModal, setShowPDFModal] = useState(false);
-
-const getItems = () => {
-  return invoiceData?.items || [];
-};
 
   const loadUserData = () => {}
 
@@ -54,26 +53,36 @@ const getItems = () => {
     localStorage.setItem("invoices", JSON.stringify(history))
   }, [history])
 
+  const getItems = () => {
+    if (invoiceData?.items && invoiceData.items.length > 0) {
+      return invoiceData.items;
+    }
+
+    const localInvoice = history.find(
+      (inv) => inv.number === invoiceData?.bill?.number
+    );
+
+    return localInvoice?.items || [];
+  };
+
   const handleViewInvoice = async (number: string) => {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/invoice/${number}`);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/invoice/${number}`);
 
-    if (!res.ok) throw new Error("Error en API");
+      if (!res.ok) throw new Error("Error en API");
 
-    const data = await res.json();
+      const data = await res.json();
 
-    setInvoiceData(data.data);
-    setShowInvoiceModal(true);
+      console.log("API DATA:", data);
 
-    console.log("INVOICE DATA:", invoiceData);
+      setInvoiceData(data.data);
+      setShowInvoiceModal(true);
 
-  } catch (error) {
-    console.error(error);
-    toast.error("Error cargando factura");
-  }
-
-  
-};
+    } catch (error) {
+      console.error(error);
+      toast.error("Error cargando factura");
+    }
+  };
 
   
   // 🔥 DESCARGAR PDF
@@ -95,123 +104,119 @@ const exportInvoiceToPDF = () => {
 
     const pdf = new jsPDF("p", "mm", "a4");
 
-    let y = 10;
-
-    // 🔷 ENCABEZADO EMPRESA
-    pdf.setFontSize(16);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("FACTUS S.A.S", 10, y);
-
-    pdf.setFontSize(10);
-    pdf.setFont("helvetica", "normal");
-    y += 5;
-    pdf.text("NIT: 900123456", 10, y);
-    y += 5;
-    pdf.text("Responsable de IVA", 10, y);
-    y += 4;
-    pdf.text("Direccion: Tu direccion, Manizales", 10, y);
-    y += 4;
-    pdf.text("Tel: 3001234567", 10, y);
-
-    // 🔷 TÍTULO FACTURA
-    
+    // =========================
+    // 🟦 ENCABEZADO EMPRESA
+    // =========================
     pdf.setFontSize(14);
     pdf.setFont("helvetica", "bold");
-    pdf.text("FACTURA ELECTRÓNICA", 140, 10);
+    pdf.text("FACTUS S.A.S", 10, 10);
 
-    pdf.setFontSize(10);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "normal");
-    pdf.text(`No: ${invoiceData.bill.number}`, 140, 16);
-    pdf.text(`Fecha: ${invoiceData.bill.created_at}`, 140, 22);
+    pdf.text("NIT: 900123456", 10, 16);
+    pdf.text("Responsable de IVA", 10, 20);
+    pdf.text("Dirección: Manizales, Colombia", 10, 24);
+    pdf.text("Tel: 3001234567", 10, 28);
 
-    y += 10;
-
-    // 🔷 CLIENTE
-    
+    // =========================
+    // 🟦 INFO FACTURA
+    // =========================
     pdf.setFont("helvetica", "bold");
-    pdf.text("DATOS DEL CLIENTE", 10, y);
+    pdf.text("FACTURA ELECTRÓNICA DE VENTA", 120, 10);
 
     pdf.setFont("helvetica", "normal");
-    y += 5;
-    pdf.text(`Nombre: ${invoiceData.customer?.names}`, 10, y);
-    y += 5;
-    pdf.text(
-      `Identificación: ${invoiceData.customer?.identification}`,
-      10,
-      y
-    );
-    y += 5;
-    pdf.text(`Email: ${invoiceData.customer?.email || "-"}`, 10, y);
+    pdf.text(`No: ${invoiceData.bill.number}`, 120, 16);
+    pdf.text(`Fecha: ${invoiceData.bill.created_at}`, 120, 20);
 
-    y += 10;
-
-    // 🔷 TABLA HEADER
-    
+    // =========================
+    // 🟦 CLIENTE
+    // =========================
     pdf.setFont("helvetica", "bold");
-    pdf.setFillColor(230, 230, 230);
-    pdf.rect(10, y, 190, 8, "F");
-
-    pdf.text("Producto", 12, y + 5);
-    pdf.text("Cant", 100, y + 5);
-    pdf.text("Precio", 120, y + 5);
-    pdf.text("IVA", 150, y + 5);
-    pdf.text("Total", 175, y + 5);
-
-    y += 10;
+    pdf.text("DATOS DEL CLIENTE", 10, 38);
 
     pdf.setFont("helvetica", "normal");
+    pdf.text(`Nombre: ${invoiceData.customer?.names}`, 10, 44);
+    pdf.text(`Identificación: ${invoiceData.customer?.identification}`, 10, 48);
+    pdf.text(`Email: ${invoiceData.customer?.email || "-"}`, 10, 52);
 
-    // 🔷 PRODUCTOS
-    invoiceData.items?.forEach((item: any) => {
+    // =========================
+    // 🟦 TABLA CON AUTOTABLE 🔥
+    // =========================
+    const items = getItems();
+
+    const tableData = items.map((item: any) => {
       const price = Number(item.price || 0);
-      const quantity = Number(item.quantity || 0);
-      const taxRate = Number(item.tax_rate || 0);
+      const qty = Number(item.quantity || 0);
+      const tax = Number(item.tax_rate || 0);
 
-      const subtotal = price * quantity;
-      const iva = subtotal * (taxRate / 100);
+      const subtotal = price * qty;
+      const iva = subtotal * (tax / 100);
       const total = subtotal + iva;
 
-      pdf.text(item.name, 12, y);
-      pdf.text(String(quantity), 100, y);
-      pdf.text(`$${price.toLocaleString("es-CO")}`, 120, y);
-      pdf.text(`$${iva.toLocaleString("es-CO")}`, 150, y);
-      pdf.text(`$${total.toLocaleString("es-CO")}`, 175, y);
+      return [
+        item.name,
+        qty,
+        `$${price.toLocaleString("es-CO")}`,
+        `${tax}%`,
+        `$${iva.toLocaleString("es-CO")}`,
+        `$${total.toLocaleString("es-CO")}`
+      ];
+    });
 
-      y += 6;
+    autoTable(pdf, {
+      startY: 60,
+      head: [["Producto", "Cant", "Precio", "%IVA", "IVA", "Total"]],
+      body: tableData,
 
-      if (y > 270) {
-        pdf.addPage();
-        y = 10;
+      styles: {
+        fontSize: 9,
+        cellPadding: 2,
+      },
+
+      headStyles: {
+        fillColor: [79, 70, 229], // Indigo
+        textColor: 255,
+        halign: "center"
+      },
+
+      columnStyles: {
+        1: { halign: "center" },
+        2: { halign: "right" },
+        3: { halign: "center" },
+        4: { halign: "right" },
+        5: { halign: "right" },
       }
     });
 
-    y += 10;
+    // =========================
+    // 🟦 TOTALES
+    // =========================
+    const finalY = (pdf as any).lastAutoTable.finalY + 10;
 
-    // 🔷 TOTALES
-    
     const subtotal = Number(invoiceData.bill.gross_value || 0);
     const iva = Number(invoiceData.bill.tax_amount || 0);
     const total = Number(invoiceData.bill.total || 0);
 
     pdf.setFont("helvetica", "bold");
 
-    pdf.text("Subtotal:", 130, y);
-    pdf.text(`$${subtotal.toLocaleString("es-CO")}`, 170, y);
+    pdf.text("Subtotal:", 130, finalY);
+    pdf.text(`$${subtotal.toLocaleString("es-CO")}`, 170, finalY);
 
-    y += 6;
-    pdf.text("IVA:", 130, y);
-    pdf.text(`$${iva.toLocaleString("es-CO")}`, 170, y);
+    pdf.text("IVA:", 130, finalY + 6);
+    pdf.text(`$${iva.toLocaleString("es-CO")}`, 170, finalY + 6);
 
-    y += 8;
-    pdf.setFontSize(13);
-    pdf.text("TOTAL:", 130, y);
-    pdf.text(`$${total.toLocaleString("es-CO")}`, 170, y);
+    pdf.setFontSize(12);
+    pdf.text("TOTAL:", 130, finalY + 14);
+    pdf.text(`$${total.toLocaleString("es-CO")}`, 170, finalY + 14);
 
-    y += 15;
-
-    // 🔷 CUFE
+    // =========================
+    // 🟦 CUFE
+    // =========================
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "normal");
+
+    let y = finalY + 25;
+
     pdf.text("CUFE:", 10, y);
     y += 4;
 
@@ -219,22 +224,34 @@ const exportInvoiceToPDF = () => {
     const splitCUFE = pdf.splitTextToSize(cufe, 180);
     pdf.text(splitCUFE, 10, y);
 
-    y += 10;
+    // =========================
+    // 🟦 QR (🔥 NIVEL DIAN)
+    // =========================
+    if (invoiceData.bill.qr_image) {
+      try {
+        pdf.addImage(invoiceData.bill.qr_image, "PNG", 150, y + 10, 40, 40);
+      } catch (err) {
+        console.warn("Error cargando QR");
+      }
+    }
 
-    // 🔷 PIE
-    pdf.setFontSize(8);
+    // =========================
+    // 🟦 FOOTER
+    // =========================
     pdf.text(
-      "Esta factura es válida electrónicamente según la DIAN.",
+      "Factura electrónica válida según la DIAN",
       10,
-      y
+      285
     );
 
     pdf.save(`Factura-${invoiceData.bill.number}.pdf`);
+
   } catch (error) {
     console.error(error);
     toast.error("Error generando PDF");
   }
 };
+
 
   return (
     <div className="p-6 space-y-8">

@@ -527,7 +527,7 @@ const exportInvoiceToPDF = () => {
 
         <div>
           <h2 className="font-semibold text-gray-700 mb-2">CLIENTE</h2>
-          <p className="text-sm font-medium">{invoiceData.customer?.names}</p>
+          <p className="text-sm font-medium  text-gray-500">{invoiceData.customer?.names}</p>
           <p className="text-sm text-gray-500">
             CC/NIT: {invoiceData.customer?.identification}
           </p>

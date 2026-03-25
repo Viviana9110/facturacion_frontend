@@ -106,14 +106,14 @@ const Bill = () => {
         return;
       }
 
-      toast.success("Factura generada");
+      toast.success(`Factura #${data.numero_factura} generada`);
 
       // ✅ GUARDAR HISTORIAL CON ITEMS
       setHistory(prev => [
         ...prev,
         {
           number: data.numero_factura,
-          customer: customer.names, // ✅ corregido
+          customer: customer.name, 
           total,
           qr: data.qr,
           pdf: data.pdf,

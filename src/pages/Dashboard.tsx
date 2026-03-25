@@ -104,43 +104,84 @@ const exportInvoiceToPDF = () => {
 
     const pdf = new jsPDF("p", "mm", "a4");
 
+    const logoBase64 = ""; // 👈 pega tu logo aquí
+
     // =========================
-    // 🟦 ENCABEZADO EMPRESA
+    // 🟦 HEADER PRINCIPAL
     // =========================
-    pdf.setFontSize(14);
+    if (logoBase64) {
+      pdf.addImage(logoBase64, "PNG", 10, 8, 30, 20);
+    }
+
     pdf.setFont("helvetica", "bold");
-    pdf.text("FACTUS S.A.S", 10, 10);
+    pdf.setFontSize(13);
+    pdf.text("FACTUS S.A.S", 45, 12);
 
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "normal");
-    pdf.text("NIT: 900123456", 10, 16);
-    pdf.text("Responsable de IVA", 10, 20);
-    pdf.text("Dirección: Manizales, Colombia", 10, 24);
-    pdf.text("Tel: 3001234567", 10, 28);
+    pdf.text("NIT: 900123456", 45, 17);
+    pdf.text("Responsable de IVA", 45, 21);
+    pdf.text("Dirección: Manizales - Colombia", 45, 25);
+    pdf.text("Tel: 3001234567", 45, 29);
 
     // =========================
-    // 🟦 INFO FACTURA
+    // 🟥 BLOQUE FACTURA (DIAN)
     // =========================
+    pdf.setDrawColor(0);
+    pdf.rect(140, 10, 60, 30);
+
     pdf.setFont("helvetica", "bold");
-    pdf.text("FACTURA ELECTRÓNICA DE VENTA", 120, 10);
+    pdf.setFontSize(10);
+    pdf.text("FACTURA ELECTRÓNICA", 145, 16);
 
     pdf.setFont("helvetica", "normal");
-    pdf.text(`No: ${invoiceData.bill.number}`, 120, 16);
-    pdf.text(`Fecha: ${invoiceData.bill.created_at}`, 120, 20);
+    pdf.text(`No: ${invoiceData.bill.number}`, 145, 22);
+    pdf.text(`Fecha: ${invoiceData.bill.created_at}`, 145, 27);
+
+    // =========================
+    // 🟦 RESOLUCIÓN DIAN
+    // =========================
+    pdf.setFontSize(8);
+    pdf.text(
+      "Resolución DIAN No. 18764000000001 del 01/01/2024",
+      10,
+      40
+    );
+    pdf.text(
+      "Rango autorizado: SETP00000001 - SETP99999999",
+      10,
+      44
+    );
 
     // =========================
     // 🟦 CLIENTE
     // =========================
+    pdf.setDrawColor(0);
+    pdf.rect(10, 48, 190, 25);
+
     pdf.setFont("helvetica", "bold");
-    pdf.text("DATOS DEL CLIENTE", 10, 38);
+    pdf.text("DATOS DEL CLIENTE", 12, 53);
 
     pdf.setFont("helvetica", "normal");
-    pdf.text(`Nombre: ${invoiceData.customer?.names}`, 10, 44);
-    pdf.text(`Identificación: ${invoiceData.customer?.identification}`, 10, 48);
-    pdf.text(`Email: ${invoiceData.customer?.email || "-"}`, 10, 52);
+    pdf.text(`Nombre: ${invoiceData.customer?.names}`, 12, 59);
+    pdf.text(
+      `Identificación: ${invoiceData.customer?.identification}`,
+      12,
+      64
+    );
+    pdf.text(`Email: ${invoiceData.customer?.email || "-"}`, 12, 69);
 
     // =========================
-    // 🟦 TABLA CON AUTOTABLE 🔥
+    // 🟦 FORMA DE PAGO
+    // =========================
+    pdf.text(
+      `Forma de pago: ${invoiceData.bill.payment_form?.name || "Contado"}`,
+      120,
+      59
+    );
+
+    // =========================
+    // 🟦 TABLA PRODUCTOS
     // =========================
     const items = getItems();
 
@@ -164,35 +205,23 @@ const exportInvoiceToPDF = () => {
     });
 
     autoTable(pdf, {
-      startY: 60,
+      startY: 75,
       head: [["Producto", "Cant", "Precio", "%IVA", "IVA", "Total"]],
       body: tableData,
 
-      styles: {
-        fontSize: 9,
-        cellPadding: 2,
-      },
+      styles: { fontSize: 8 },
 
       headStyles: {
-        fillColor: [79, 70, 229], // Indigo
+        fillColor: [0, 0, 0],
         textColor: 255,
-        halign: "center"
-      },
-
-      columnStyles: {
-        1: { halign: "center" },
-        2: { halign: "right" },
-        3: { halign: "center" },
-        4: { halign: "right" },
-        5: { halign: "right" },
       }
     });
+
+    const finalY = (pdf as any).lastAutoTable.finalY + 8;
 
     // =========================
     // 🟦 TOTALES
     // =========================
-    const finalY = (pdf as any).lastAutoTable.finalY + 10;
-
     const subtotal = Number(invoiceData.bill.gross_value || 0);
     const iva = Number(invoiceData.bill.tax_amount || 0);
     const total = Number(invoiceData.bill.total || 0);
@@ -202,20 +231,20 @@ const exportInvoiceToPDF = () => {
     pdf.text("Subtotal:", 130, finalY);
     pdf.text(`$${subtotal.toLocaleString("es-CO")}`, 170, finalY);
 
-    pdf.text("IVA:", 130, finalY + 6);
-    pdf.text(`$${iva.toLocaleString("es-CO")}`, 170, finalY + 6);
+    pdf.text("IVA:", 130, finalY + 5);
+    pdf.text(`$${iva.toLocaleString("es-CO")}`, 170, finalY + 5);
 
-    pdf.setFontSize(12);
-    pdf.text("TOTAL:", 130, finalY + 14);
-    pdf.text(`$${total.toLocaleString("es-CO")}`, 170, finalY + 14);
+    pdf.setFontSize(11);
+    pdf.text("TOTAL:", 130, finalY + 12);
+    pdf.text(`$${total.toLocaleString("es-CO")}`, 170, finalY + 12);
 
     // =========================
     // 🟦 CUFE
     // =========================
-    pdf.setFontSize(8);
-    pdf.setFont("helvetica", "normal");
+    let y = finalY + 20;
 
-    let y = finalY + 25;
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "normal");
 
     pdf.text("CUFE:", 10, y);
     y += 4;
@@ -225,23 +254,35 @@ const exportInvoiceToPDF = () => {
     pdf.text(splitCUFE, 10, y);
 
     // =========================
-    // 🟦 QR (🔥 NIVEL DIAN)
+    // 🟦 QR
     // =========================
     if (invoiceData.bill.qr_image) {
       try {
-        pdf.addImage(invoiceData.bill.qr_image, "PNG", 150, y + 10, 40, 40);
-      } catch (err) {
-        console.warn("Error cargando QR");
-      }
+        pdf.addImage(invoiceData.bill.qr_image, "PNG", 150, y + 5, 40, 40);
+      } catch (err) {}
     }
 
     // =========================
-    // 🟦 FOOTER
+    // 🟦 FOOTER LEGAL DIAN
     // =========================
+    pdf.setFontSize(7);
+
     pdf.text(
-      "Factura electrónica válida según la DIAN",
+      "Esta factura electrónica se valida según la DIAN.",
       10,
-      285
+      270
+    );
+
+    pdf.text(
+      "Software de facturación autorizado.",
+      10,
+      274
+    );
+
+    pdf.text(
+      "Representación gráfica de la factura electrónica.",
+      10,
+      278
     );
 
     pdf.save(`Factura-${invoiceData.bill.number}.pdf`);
@@ -251,7 +292,6 @@ const exportInvoiceToPDF = () => {
     toast.error("Error generando PDF");
   }
 };
-
 
   return (
     <div className="p-6 space-y-8">
